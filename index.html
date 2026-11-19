@@ -88,7 +88,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 .row{display:flex;align-items:center;gap:14px;padding:8px 0;width:100%;text-align:left}
 .th{position:relative;width:136px;aspect-ratio:16/9;flex:none;border-radius:12px;background:var(--tint);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;font-weight:600}
 .tb{position:relative;overflow:hidden}
-.tb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:5px}
+.tb img{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;object-fit:fill;background:transparent;padding:0}
 .ph{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,var(--tint2),var(--tint));color:var(--mute)}
 .ph svg{height:70%;width:auto;max-width:90%;stroke-width:1.4}
 .th i{position:absolute;right:6px;bottom:6px;font-style:normal;font-size:11px;font-weight:600;background:rgba(0,0,0,.72);color:#fff;padding:0 6px;border-radius:4px;line-height:18px}
@@ -114,23 +114,39 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 .phd i{width:44px}
 .pscroll{flex:1;overflow-y:auto;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 #stage{background:#000}
-#art{display:none;width:min(72vw,320px);aspect-ratio:1;margin:20px auto 4px;border-radius:20px}
+#art{display:none;width:min(88vw,420px);height:56px;margin:14px auto 0;align-items:center;justify-content:center;gap:5px}
+#art i{display:block;flex:none;width:4px;height:100%;border-radius:99px;background:var(--ink);transform:scaleY(.15);animation:eq 1s ease-in-out infinite;animation-play-state:paused}
+#art i:nth-child(4n+1){animation-duration:1.9s}
+#art i:nth-child(4n+2){animation-duration:2.3s}
+#art i:nth-child(4n+3){animation-duration:1.7s}
+#art i:nth-child(4n){animation-duration:2.5s}
+#art i:nth-child(3n+1){animation-delay:-.3s}
+#art i:nth-child(3n+2){animation-delay:-1.1s}
+#art i:nth-child(3n){animation-delay:-.7s}
+#art i:nth-child(7n){animation-delay:-1.5s}
+#player.snd #art i{animation-play-state:running}
+@keyframes eq{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(.7)}}
+@media(prefers-reduced-motion:reduce){#art i{animation:none;transform:scaleY(.5)}}
 #player.radio #au{display:none}
 #player.radio #stage{background:none}
-#player.radio #art{display:block}
+#player.radio #art{display:flex}
 .pin{max-width:720px;margin:0 auto;padding:0 var(--pad)}
 .pin h2{margin:16px 0 4px;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.01em}
 #pm{margin:0;color:var(--mute);font-size:15px}
 .pst{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mute)}
-.ctl{display:flex;align-items:center;justify-content:center;gap:20px;padding:18px 0 8px}
-.ctl .ib{width:56px;height:56px;background:var(--tint)}
-.ctl .ib svg{width:28px;height:28px}
+.ctl{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 2px}
+.ctl .ib{width:38px;height:38px;background:none}
+.ctl .ib svg{width:20px;height:20px}
 #pp,#pp2{background:var(--accent);color:var(--accent-ink)}
 #pp svg,#pp2 svg{fill:currentColor;stroke:none}
-#pp2{width:72px;height:72px}
-.acts{display:flex;justify-content:center;gap:10px;padding:8px 0 14px}
-.act{display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:22px;background:var(--tint);font-weight:600;font-size:15px;white-space:nowrap}
-.act svg{width:22px;height:22px}
+#pp2{width:46px;height:46px}
+#pp2 svg{width:20px;height:20px}
+.acts{display:flex;justify-content:center;gap:4px;padding:2px 0 8px}
+.act{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:17px;background:none;font-weight:600;font-size:13px;white-space:nowrap}
+.act svg{width:18px;height:18px}
+.pcard{grid-column:1;background:#d97757;color:#fff;border:0;border-radius:20px;margin:12px 0 18px;padding:8px 8px 4px;box-shadow:0 10px 26px rgba(217,119,87,.45),0 2px 6px rgba(0,0,0,.12)}
+.pcard .ib:hover{background:rgba(255,255,255,.18)}
+.pcard #pp2{background:#fff;color:#d97757}
 #bart{width:48px;height:48px;border-radius:10px;background:var(--tint);flex:none}
 #now{flex:1;min-width:0}
 #now b{display:block;font-weight:600;font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -229,12 +245,12 @@ body.typing #dock{display:none}
  <div class="phd"><button class="ib" id="pb" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>Now playing</b><i></i></div>
  <div class="pscroll">
   <div id="stage"><video id="au" playsinline controls controlslist="nofullscreen"></video><button id="fsb" aria-label="Full screen"><svg class="e" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-  <div id="art" class="tb"></div>
+  <div id="art" class="tb"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="pin">
    <h2 id="pn"></h2><p id="pm"></p>
    <div class="pst"><span class="lv">LIVE</span><span id="ps"></span></div>
-   <div class="ctl"><button class="ib" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button><button class="ib" id="pp2" aria-label="Play or pause"></button><button class="ib" id="next" aria-label="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg></button></div>
-   <div class="acts"><button class="act" id="pfav"></button><button class="act" id="pq"></button><button class="act" id="share"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>Share</button></div>
+   <div class="pcard"><div class="ctl"><button class="ib" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button><button class="ib" id="pp2" aria-label="Play or pause"></button><button class="ib" id="next" aria-label="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg></button></div>
+   <div class="acts"><button class="act" id="pfav"></button><button class="act" id="pq"></button><button class="act" id="share"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>Share</button></div></div>
    <div id="alt"><div class="alth"><span>Other sources for this channel</span></div><div id="altl"></div></div>
   </div>
  </div>
@@ -255,6 +271,8 @@ var TVI='<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2
 function thumb(i){return (i.logo?'<img loading="lazy" referrerpolicy="no-referrer" alt="" src="'+esc(i.logo)+'" onerror="this.remove()">':'')+'<span class="ph">'+(i.type==="tv"?TVI:RADI)+'</span>'}
 function setPP(h){$("#pp").innerHTML=h;$("#pp2").innerHTML=h}
 var cache={},loadId=0,hls=null,timer=0,skip=0,v=$("#au");
+v.addEventListener("playing",function(){$("#player").classList.add("snd")});
+["waiting","pause","error","emptied","loadstart"].forEach(function(e){v.addEventListener(e,function(){$("#player").classList.remove("snd")})});
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function fid(i){return i.type+"|"+i.url}
 function toast(t){var e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none"},2400)}
@@ -448,7 +466,7 @@ function play(i,auto){
   var tv=i.type==="tv";
   $("#player").classList.toggle("radio",!tv);$("#bar").classList.add("show");
   $("#nm").textContent=i.name;$("#pn").textContent=i.name;$("#pm").textContent=[tv?"TV":"Radio",i.cc?cname(i.cc):"",i.meta].filter(Boolean).join(" · ");
-  var th=thumb(i);$("#bart").innerHTML=th;$("#art").innerHTML=th;fixImgs($("#bar"));fixImgs($("#art"));if(!auto)openP();
+  var th=thumb(i);$("#bart").innerHTML=th;fixImgs($("#bar"));fixImgs($("#art"));if(!auto)openP();
   setSt("Connecting…");setPP(PAUSE);
   if(!auto){hist=[i].concat(hist.filter(function(h){return fid(h)!==fid(i)})).slice(0,60).map(function(h){return{type:h.type,name:h.name,logo:h.logo,meta:h.meta,url:h.url,cc:h.cc}});store.set("broad.hist",hist);track("play",{type:i.type,name:i.name})}
   var failed=false;
