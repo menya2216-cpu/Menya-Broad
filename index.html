@@ -304,8 +304,8 @@ function getIndex(){
 }
 
 /* ---- live testing ---- */
-function fresh(u){var p=P[u];return !!p&&Date.now()-p[1]<(p[0]?3:12)*36e5}
-function alive(i){return fresh(i.url)&&P[i.url][0]===1}
+function fresh(u){var p=P[u];return !!p&&p[0]===1&&Date.now()-p[1]<108e5}
+function alive(i){var p=P[i.url];return !!p&&p[0]===1}
 function savePSoon(){if(savePSoon.t)return;savePSoon.t=setTimeout(function(){savePSoon.t=0;var k=Object.keys(P);if(k.length>5000)k.sort(function(a,b){return P[a][1]-P[b][1]}).slice(0,1500).forEach(function(x){delete P[x]});store.set("broad.probe",P)},2000)}
 function probe(i){
   return new Promise(function(res){
@@ -326,12 +326,17 @@ function probe(i){
   });
 }
 var rt=0;function sched(){if(rt)return;rt=setTimeout(function(){rt=0;render()},600)}
+var holdUntil=0;
 function startProbe(items,id){
-  var q=items.filter(function(i){return !fresh(i.url)}).slice(0,500);
-  S.pt={done:0,total:q.length,id:id};if(!q.length)return;
+  S.kn={};items.forEach(function(i){if(alive(i))S.kn[i.url]=1});
+  var qd=S.qd&&S.qd.id===id?S.qd:(S.qd={id:id,u:{}});
+  var q=items.filter(function(i){return !fresh(i.url)&&!qd.u[i.url]}).sort(function(a,b){function r(i){var p=P[i.url];return !p?0:p[0]?1:2}return r(a)-r(b)}).slice(0,500);
+  q.forEach(function(i){qd.u[i.url]=1});
+  var o=S.pt&&S.pt.id===id?S.pt:{done:0,total:0};S.pt={done:o.done,total:o.total+q.length,id:id};if(!q.length)return;
   var idx=0,act=0;
   (function pump(){
-    while(act<10&&idx<q.length&&id===loadId){(function(i){act++;probe(i).then(function(ok){P[i.url]=[ok?1:0,Date.now()];act--;S.pt.done++;savePSoon();sched();pump()})})(q[idx++])}
+    if(Date.now()<holdUntil&&idx<q.length&&id===loadId){setTimeout(pump,1000);return}
+    while(act<10&&idx<q.length&&id===loadId){(function(i){act++;var t0=Date.now();probe(i).then(function(ok){P[i.url]=[ok?1:0,Date.now(),Date.now()-t0];act--;S.pt.done++;savePSoon();sched();pump()})})(q[idx++])}
   })();
 }
 
@@ -341,7 +346,7 @@ function filtered(){
   var t=S.tab,l;
   if(t==="fav")return favs.slice();
   if(t==="hist")return hist.slice();
-  l=S.src.filter(alive);
+  l=S.src.filter(alive);l.sort(function(a,b){var x=S.kn&&S.kn[a.url]?0:1,y=S.kn&&S.kn[b.url]?0:1;if(x!==y)return x-y;if(x===0)return (P[a.url][2]||99999)-(P[b.url][2]||99999);return 0});
   if(t==="tv"||t==="radio")l=l.filter(function(i){return i.type===t});
   else if(CAT[t])l=l.filter(function(i){return CAT[t].test(i.meta+" "+i.name)});
   return l;
@@ -370,11 +375,13 @@ function load(){
   if(S.search){
     $("#list").innerHTML='<div class="msg">Searching…</div>';
     var q=S.search.toLowerCase();
-    Promise.all([getIndex(),rb("/json/stations/byname/"+encodeURIComponent(S.search)+"?hidebroken=true&order=clickcount&reverse=true&limit=60&is_https=true")]).then(function(r){
-      if(id!==loadId)return;
-      var tv=r[0].filter(function(i){return i.name.toLowerCase().indexOf(q)>-1}).slice(0,60);
-      S.src=tv.concat(mapRadio(r[1]));startProbe(S.src,id);render();
-    });
+    var qs=q.split(/\s+/).filter(Boolean),rad=[],tvl=[];
+    function hit(i){var n=(i.name||"").toLowerCase();return qs.every(function(t){return n.indexOf(t)>-1})}
+    function upd(l){if(id!==loadId)return;var seen={},a=[];l.forEach(function(i){if(!seen[i.url]){seen[i.url]=1;a.push(i)}});a.sort(function(x,y){return (x.name.toLowerCase().indexOf(q)===0?0:1)-(y.name.toLowerCase().indexOf(q)===0?0:1)});S.src=a;startProbe(S.src,id);render()}
+    var loc=(cache["tv"+S.cc]||[]).concat(cache["r"+S.cc]||[],cache.idx||[]).filter(hit).slice(0,60);
+    if(loc.length)upd(loc);
+    rb("/json/stations/search?name="+encodeURIComponent(S.search)+"&hidebroken=true&order=clickcount&reverse=true&limit=60&is_https=true").then(function(a){rad=mapRadio(a);upd(loc.concat(tvl,rad))});
+    getIndex().then(function(a){tvl=a.filter(hit).slice(0,60);upd(loc.concat(tvl,rad))});
     return;
   }
   $("#list").innerHTML='<div class="msg">Loading…</div>';
@@ -397,7 +404,7 @@ function score(c,s){
 function alts(s){
   var pool=S.src.concat(cache["tv"+s.cc]||[],cache["r"+s.cc]||[],cache.idx||[]),seen={};
   seen[fid(s)]=1;
-  return pool.filter(function(c){if(c.type!==s.type||seen[fid(c)]||(fresh(c.url)&&!P[c.url][0]))return false;seen[fid(c)]=1;return true})
+  return pool.filter(function(c){if(c.type!==s.type||seen[fid(c)]||(P[c.url]&&!P[c.url][0]&&Date.now()-P[c.url][1]<6e5))return false;seen[fid(c)]=1;return true})
     .map(function(c){return[score(c,s),c]}).filter(function(x){return x[0]>8}).sort(function(a,b){return b[0]-a[0]}).slice(0,12).map(function(x){return x[1]});
 }
 function renderAlt(){
@@ -416,8 +423,9 @@ function qLbl(){var q=qPref();$("#pq").textContent="Quality: "+(q?q+"p":"Auto")}
 function applyQ(){if(!hls)return;var q=qPref(),L=hls.levels||[],idx=-1,n;if(q){for(n=0;n<L.length;n++)if(L[n].height&&L[n].height<=q&&(idx<0||L[n].height>=L[idx].height))idx=n;if(idx<0){idx=0;for(n=0;n<L.length;n++)if(L[n].height&&L[n].height<L[idx].height)idx=n}}hls.autoLevelCapping=q?idx:-1}
 qLbl();
 $("#pq").onclick=function(){var o=[0,360,480,720],n=o[(o.indexOf(qPref())+1)%o.length];store.set("broad.q",n);qLbl();applyQ();toast(hls&&hls.levels&&hls.levels.length>1?(n?"Max quality "+n+"p":"Quality: auto"):"This stream has no quality choice")}
+function go(){var p=v.play();if(p&&p.catch)p.catch(function(e){if(e&&e.name==="NotAllowedError"){clearTimeout(timer);setSt("Tap play to start");setPP(PLAY)}})}
 function play(i,auto){
-  destroy();S.cur=i;
+  holdUntil=Date.now()+12000;destroy();S.cur=i;
   var tv=i.type==="tv";
   $("#player").classList.toggle("radio",!tv);$("#bar").classList.add("show");
   $("#nm").textContent=i.name;$("#pn").textContent=i.name;$("#pm").textContent=[tv?"TV":"Radio",i.cc?cname(i.cc):"",i.meta].filter(Boolean).join(" · ");
@@ -438,8 +446,8 @@ function play(i,auto){
   if(isH&&window.Hls&&Hls.isSupported()){
     hls=new Hls({manifestLoadingTimeOut:6000,manifestLoadingMaxRetry:1,levelLoadingTimeOut:6000,fragLoadingTimeOut:8000,fragLoadingMaxRetry:1,maxBufferLength:12});
     hls.on(Hls.Events.ERROR,function(e,d){if(d.fatal)fail()});
-    hls.loadSource(i.url);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,function(){applyQ();v.play().catch(function(){})});
-  }else{v.src=i.url;v.play().catch(function(){})}
+    hls.loadSource(i.url);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,function(){applyQ();go()});
+  }else{v.src=i.url;go()}
   if("mediaSession" in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:i.name,artist:"Broad"});navigator.mediaSession.setActionHandler("nexttrack",next);navigator.mediaSession.setActionHandler("previoustrack",prev)}catch(e){}}
   render();
 }
@@ -487,12 +495,13 @@ $("#stage").addEventListener("touchend",function(e){var d=e.changedTouches[0].cl
 addEventListener("popstate",closeP);
 document.addEventListener("keydown",function(e){if(e.key==="Escape")backP()});
 var gt = 0;
+$("#gq").addEventListener("focus", function() { getIndex() });
 $("#gq").addEventListener("blur",function(){document.body.classList.remove("typing")});
 $("#gq").addEventListener("keydown",function(e){if(e.key==="Enter")this.blur()});
 if(window.visualViewport){var base=visualViewport.height;addEventListener("orientationchange",function(){setTimeout(function(){base=visualViewport.height},400)});visualViewport.addEventListener("resize",function(){var h=visualViewport.height;if(h>base)base=h;var open=h<base-120;document.body.classList.toggle("typing",open);if(!open&&document.activeElement===$("#gq"))$("#gq").blur()})}
 $("#gq").addEventListener("input",function(){
   var q=this.value.trim();$("#gx").style.display=this.value?"grid":"none";clearTimeout(gt);
-  gt=setTimeout(function(){S.search=q.length>1?q:"";if(S.tab==="fav"||S.tab==="hist")S.tab="all";load();if(q.length>1)track("search",{search_term:q})},450);
+  gt=setTimeout(function(){S.search=q.length>1?q:"";if(S.tab==="fav"||S.tab==="hist")S.tab="all";load();if(q.length>1)track("search",{search_term:q})},250);
 });
 $("#gx").onclick=function(){$("#gq").value="";$("#gx").style.display="none";S.search="";load()};
 $("#pp").onclick=function(){if(v.paused)v.play().catch(function(){});else v.pause()};
