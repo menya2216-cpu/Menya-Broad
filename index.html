@@ -304,17 +304,17 @@ function getIndex(){
 }
 
 /* ---- live testing ---- */
-function fresh(u){var p=P[u];return !!p&&p[0]===1&&Date.now()-p[1]<108e5}
+function fresh(u){var p=P[u];return !!p&&p[0]===1&&!p[3]&&Date.now()-p[1]<108e5}
 function alive(i){var p=P[i.url];return !!p&&p[0]===1}
 function savePSoon(){if(savePSoon.t)return;savePSoon.t=setTimeout(function(){savePSoon.t=0;var k=Object.keys(P);if(k.length>5000)k.sort(function(a,b){return P[a][1]-P[b][1]}).slice(0,1500).forEach(function(x){delete P[x]});store.set("broad.probe",P)},2000)}
 function probe(i){
   return new Promise(function(res){
     var done=false,h=null,el=null,t;
     function fin(ok){if(done)return;done=true;clearTimeout(t);if(h){try{h.destroy()}catch(e){}}if(el){try{el.pause();el.removeAttribute("src");el.load()}catch(e){}}res(ok)}
-    t=setTimeout(function(){fin(false)},i.type==="tv"?7000:6000);
+    t=setTimeout(function(){fin(false)},i.type==="tv"?20000:12000);
     var isH=/\.m3u8?(\?|$)/i.test(i.url)||i.url.indexOf("m3u8")>-1;
     if(isH&&window.Hls&&Hls.isSupported()){
-      h=new Hls({manifestLoadingMaxRetry:0,levelLoadingMaxRetry:0,manifestLoadingTimeOut:5000,levelLoadingTimeOut:5000});
+      h=new Hls({manifestLoadingMaxRetry:1,levelLoadingMaxRetry:1,manifestLoadingTimeOut:9000,levelLoadingTimeOut:9000});
       h.on(Hls.Events.LEVEL_LOADED,function(){fin(true)});
       h.on(Hls.Events.MANIFEST_PARSED,function(){setTimeout(function(){fin(true)},2500)});
       h.on(Hls.Events.ERROR,function(e,d){if(d.fatal)fin(false)});
@@ -336,7 +336,7 @@ function startProbe(items,id){
   var idx=0,act=0;
   (function pump(){
     if(Date.now()<holdUntil&&idx<q.length&&id===loadId){setTimeout(pump,1000);return}
-    while(act<10&&idx<q.length&&id===loadId){(function(i){act++;var t0=Date.now();probe(i).then(function(ok){P[i.url]=[ok?1:0,Date.now(),Date.now()-t0];act--;S.pt.done++;savePSoon();sched();pump()})})(q[idx++])}
+    while(act<10&&idx<q.length&&id===loadId){(function(i){act++;var t0=Date.now();probe(i).then(function(ok){var o=P[i.url],fc=ok?0:((o&&o[3])||0)+1;P[i.url]=[ok||(o&&o[0]===1&&fc<3)?1:0,Date.now(),ok?Date.now()-t0:(o&&o[2])||0,fc];act--;S.pt.done++;savePSoon();sched();pump()})})(q[idx++])}
   })();
 }
 
@@ -439,12 +439,12 @@ function play(i,auto){
     if(a&&skip<=3){toast("This one is off. Trying another alternative.");play(a,true)}
     else{skip=0;setSt("Not available");toast("Not available right now. See another alternative.");render()}
   }
-  timer=setTimeout(fail,9000);
+  timer=setTimeout(fail,20000);
   v.onplaying=function(){clearTimeout(timer);skip=0;setSt(tv?"Live TV":"Live radio");setPP(PAUSE)};
   v.onpause=function(){setPP(PLAY)};v.onwaiting=function(){setSt("Buffering…")};v.onerror=fail;
   var isH=/\.m3u8?(\?|$)/i.test(i.url)||i.url.indexOf("m3u8")>-1;
   if(isH&&window.Hls&&Hls.isSupported()){
-    hls=new Hls({manifestLoadingTimeOut:6000,manifestLoadingMaxRetry:1,levelLoadingTimeOut:6000,fragLoadingTimeOut:8000,fragLoadingMaxRetry:1,maxBufferLength:12});
+    hls=new Hls({manifestLoadingTimeOut:9000,manifestLoadingMaxRetry:1,levelLoadingTimeOut:9000,fragLoadingTimeOut:12000,fragLoadingMaxRetry:1,maxBufferLength:12});
     hls.on(Hls.Events.ERROR,function(e,d){if(d.fatal)fail()});
     hls.loadSource(i.url);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,function(){applyQ();go()});
   }else{v.src=i.url;go()}
