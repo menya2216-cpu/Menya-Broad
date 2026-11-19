@@ -1,0 +1,19 @@
+{
+  "tv": [
+    {
+      "name": "KC2 (720p)",
+      "url": "https://5c46fa289c89f.streamlock.net/kc2/kc2/chunklist.m3u8",
+      "logo": "",
+      "meta": "Entertainment",
+      "cc": "RW"
+    },
+    {
+      "name": "RTV Rwanda (480p)",
+      "url": "https://5c46fa289c89f.streamlock.net/rtv25/rtv/playlist.m3u8",
+      "logo": "",
+      "meta": "General",
+      "cc": "RW"
+    }
+  ],
+  "radio": []
+}
