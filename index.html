@@ -137,16 +137,20 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 .ctl{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 2px}
 .ctl .ib{width:38px;height:38px;background:none}
 .ctl .ib svg{width:20px;height:20px}
-#pp,#pp2{background:var(--accent);color:var(--accent-ink)}
+#pp,#pp2{background:none;color:var(--ink)}
+#pp:hover{background:none}
+#pp svg{width:28px;height:28px}
 #pp svg,#pp2 svg{fill:currentColor;stroke:none}
 #pp2{width:46px;height:46px}
 #pp2 svg{width:20px;height:20px}
 .acts{display:flex;justify-content:center;gap:4px;padding:2px 0 8px}
 .act{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:17px;background:none;font-weight:600;font-size:13px;white-space:nowrap}
 .act svg{width:18px;height:18px}
-.pcard{grid-column:1;background:#d97757;color:#fff;border:0;border-radius:20px;margin:12px 0 18px;padding:8px 8px 4px;box-shadow:0 10px 26px rgba(217,119,87,.45),0 2px 6px rgba(0,0,0,.12)}
-.pcard .ib:hover{background:rgba(255,255,255,.18)}
-.pcard #pp2{background:#fff;color:#d97757}
+.pcard{grid-column:1;background:var(--bg);color:var(--ink);border:0;border-radius:20px;margin:12px 0 18px;padding:8px 8px 4px;box-shadow:0 12px 28px rgba(0,0,0,.16),0 2px 8px rgba(0,0,0,.10)}
+html[data-theme=dark] .pcard{box-shadow:0 12px 28px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.07)}
+.pcard .ib:hover{background:transparent;opacity:.7}
+.pcard #pp2{background:none;color:var(--ink);box-shadow:none}
+.pcard #pp2 svg{width:30px;height:30px}
 #bart{width:48px;height:48px;border-radius:10px;background:var(--tint);flex:none}
 #now{flex:1;min-width:0}
 #now b{display:block;font-weight:600;font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -225,6 +229,7 @@ body.typing #dock{display:none}
  </section>
  <div id="stat"></div>
  <div id="list"></div>
+
 </div>
 <div id="dock">
  <div id="bar">
@@ -239,6 +244,7 @@ body.typing #dock{display:none}
   <button data-t="radio" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="11" rx="2"/><circle cx="16" cy="14.5" r="2.5"/><path d="M7 13h3M7 16h3M5 5l12 4"/></svg>Radio</button>
   <button data-t="fav" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Saved</button>
   <button data-t="hist" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+  
  </nav>
 </div>
 <section id="player" role="dialog" aria-label="Now playing">
@@ -566,6 +572,7 @@ if(!(matchMedia("(display-mode: standalone)").matches||navigator.standalone))$("
 $("#install").onclick=function(){if(!dip){toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?"Tap Share, then Add to Home Screen":"Open the browser menu, then tap Install app");return}dip.prompt();dip.userChoice.finally(function(){dip=null;$("#install").hidden=true})};
 if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!navigator.standalone&&!store.get("broad.iosHint",0)){setTimeout(function(){toast("Install: tap Share, then Add to Home Screen");store.set("broad.iosHint",1)},4000)}
 if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+
 
 /* ---- start ---- */
 Promise.all([loadCountries(),loadCustom()]).then(function(){
