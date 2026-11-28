@@ -1,5 +1,5 @@
 /* Broad service worker: installable app, fast repeat opens, safe for live streams */
-const VERSION = "broad-v1";
+const VERSION = "broad-v2";
 const SHELL = [
   "/", "/manifest.json", "/icon-96.png", "/icon-192.png", "/icon-512.png",
   "/apple-touch-icon.png", "/favicon-32.png", "/logo-mark-preview.png"
@@ -24,7 +24,7 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== "broad-meta").map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -73,4 +73,30 @@ self.addEventListener("fetch", e => {
       return net.then(res => res || new Response("", { status: 504 }));
     })());
   }
+});
+
+/* daily reminders: morning, afternoon, evening (no server; browser decides exact timing) */
+self.addEventListener("periodicsync", e => {
+  if (e.tag !== "broad-remind") return;
+  e.waitUntil((async () => {
+    const d = new Date(), h = d.getHours();
+    const slot = h >= 6 && h < 11 ? "morning" : h >= 12 && h < 16 ? "afternoon" : h >= 17 && h < 22 ? "evening" : "";
+    if (!slot) return;
+    const c = await caches.open("broad-meta"), key = d.toDateString() + slot;
+    const last = await c.match("last");
+    if (last && (await last.text()) === key) return;
+    await c.put("last", new Response(key));
+    let f = {};
+    try { f = await (await c.match("fav")).json(); } catch (x) {}
+    const hi = { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" }[slot];
+    await self.registration.showNotification("Broad", {
+      body: f.name ? hi + "! Your favorite " + f.name + " is waiting. Tap to listen." : hi + "! Tap to listen to live radio and TV.",
+      icon: "/icon-512.png", badge: "/favicon-32.png", tag: "broad-" + slot, data: { url: f.url || "/" }
+    });
+  })());
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow((e.notification.data && e.notification.data.url) || "/"));
 });
